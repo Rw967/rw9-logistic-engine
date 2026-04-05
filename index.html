@@ -2,226 +2,167 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rw9 ENGINE | SYSTEM LOCKDOWN</title>
+    <title>Rw9 | PRIVATE CORE v13.0.5</title>
     <style>
-        :root {
-            --neon-purple: #bf00ff;
-            --neon-cyan: #00ffff;
-        }
-
+        :root { --neon-purple: #bf00ff; --main-color: var(--neon-purple); }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', monospace; }
+        body { background: #000; color: #fff; height: 100vh; width: 100vw; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 
-        body {
-            background-color: #000;
-            color: #fff;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
+        #bg-canvas { position: absolute; inset: 0; z-index: 1; opacity: 0.3; }
 
-        /* Hintergrund-Partikel */
-        #bg-canvas {
-            position: absolute;
-            top: 0; left: 0;
-            z-index: 1;
-            opacity: 0.2;
-        }
+        /* ADMIN INTERFACE (Standardmäßig versteckt) */
+        #admin-controls { display: none; }
 
-        /* UPDATE SCREEN CONTAINER */
-        #update-screen {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            width: 100%;
-            max-width: 600px;
-            padding: 20px;
+        /* ROBLOX BROADCAST */
+        #broadcast-layer { position: fixed; top: 15%; width: 100%; text-align: center; z-index: 2000; pointer-events: none; }
+        .announcement { 
+            font-size: 38px; font-weight: 900; color: #fff; 
+            text-shadow: 0 0 25px var(--main-color); 
+            background: rgba(0,0,0,0.6); display: inline-block; padding: 15px 50px; 
+            border-radius: 12px; transform: scale(0); transition: 0.4s; 
         }
+        .announcement.show { transform: scale(1); }
 
-        h1 {
-            font-size: 45px;
-            letter-spacing: 12px;
-            color: var(--neon-purple);
-            text-shadow: 0 0 20px var(--neon-purple);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
+        /* CHAT UNTEN LINKS */
+        #chat-box { position: fixed; bottom: 30px; left: 30px; width: 380px; background: rgba(0,0,0,0.8); border: 1px solid #1a1a1a; padding: 15px; z-index: 1000; }
+        #chat-display { height: 120px; overflow-y: auto; font-size: 13px; margin-bottom: 10px; color: #555; }
+        #chat-input { width: 100%; background: #0a0a0a; border: 1px solid #222; color: #fff; padding: 10px; outline: none; border-left: 3px solid var(--main-color); }
 
-        .sub-text {
-            color: #444;
-            font-size: 12px;
-            letter-spacing: 3px;
-            margin-bottom: 60px;
-        }
+        /* SYSTEM UPDATE UI */
+        #update-ui { position: relative; z-index: 10; text-align: center; width: 650px; }
+        h1 { font-size: 55px; letter-spacing: 15px; color: var(--main-color); text-shadow: 0 0 30px var(--main-color); font-weight: 900; }
+        
+        /* Das kaputte "e" */
+        .flacker-e { display: inline-block; }
+        .broken { opacity: 0.1; transform: translate(4px, -2px) skewX(20deg); filter: blur(2px); }
 
-        /* LADEBALKEN */
-        .progress-container {
-            width: 100%;
-            height: 4px;
-            background: #111;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-        }
-
-        #progress-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--neon-purple);
-            box-shadow: 0 0 20px var(--neon-purple);
-            transition: width 1s linear;
-        }
-
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            font-size: 11px;
-            color: #222;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        /* ALARM OVERLAY */
-        #alarm {
-            position: fixed;
-            inset: 0;
-            background: rgba(255, 0, 0, 0.3);
-            display: none;
-            z-index: 100;
-            animation: flash 0.6s infinite;
-        }
-
-        @keyframes flash {
-            0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; }
-        }
-
-        #secret-btn {
-            position: fixed;
-            bottom: 0; right: 0;
-            width: 20px; height: 20px;
-            background: transparent;
-            z-index: 1000;
-            cursor: pointer;
-        }
+        .owner-info { color: #222; font-size: 11px; letter-spacing: 4px; margin-top: 25px; }
+        .progress-bar { width: 100%; height: 3px; background: #080808; margin-top: 40px; overflow: hidden; }
+        #fill { height: 100%; background: var(--main-color); width: 0%; box-shadow: 0 0 20px var(--main-color); transition: 1s linear; }
+        .stats { display: flex; justify-content: space-between; margin-top: 20px; font-size: 11px; color: #111; }
     </style>
 </head>
 <body>
 
     <canvas id="bg-canvas"></canvas>
-    <div id="alarm"></div>
 
-    <audio id="bg-music" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
-
-    <div id="update-screen">
-        <p style="color: #111; font-size: 10px; margin-bottom: 5px;">SECURITY PROTOCOL v12.9.9</p>
-        <h1>System Update</h1>
-        <p class="sub-text">Owner <b>Rw9</b> is deploying new core logic...</p>
-
-        <div class="progress-container">
-            <div id="progress-fill"></div>
+    <div id="admin-controls">
+        <div id="broadcast-layer">
+            <div id="announcement-text" class="announcement">ADMIN ACCESS GRANTED</div>
         </div>
-
-        <div class="stats">
-            <div id="perc-display">0.00%</div>
-            <div id="eta-display">ETA: 02:00:00</div>
+        <div id="chat-box">
+            <div id="chat-display"></div>
+            <input type="text" id="chat-input" placeholder="Enter Command...">
         </div>
     </div>
 
-    <div id="secret-btn" onclick="cheat()"></div>
+    <div id="update-ui">
+        <p style="color:#080808; font-size:9px; margin-bottom:10px; letter-spacing:5px;">Rw9_PRIVATE_KERNEL_v13.0.5</p>
+        <h1>SYSTEM UPDAT<span id="target-e" class="flacker-e">e</span></h1>
+        <div class="owner-info" id="status-text">WAITING FOR AUTHORIZATION...</div>
+        <div class="progress-bar"><div id="fill"></div></div>
+        <div class="stats">
+            <div id="perc">0.00%</div>
+            <div id="eta">ETA: 00:23:00</div>
+        </div>
+    </div>
 
     <script>
-        const DURATION = 7200; // 2 Stunden
-        const KEY = "rw9_start_time";
-        let startTime;
-        let finished = false;
+        let duration = 23 * 60; 
+        const maxTime = 23 * 60;
+        let isAdmin = false;
 
-        function init() {
-            // Check Speicher
-            const saved = localStorage.getItem(KEY);
-            if (saved) {
-                startTime = parseInt(saved);
-            } else {
-                startTime = Date.now();
-                localStorage.setItem(KEY, startTime);
+        // --- HOTKEY DETECTION (ALT + F5) ---
+        window.addEventListener('keydown', function(e) {
+            // e.altKey prüft auf Alt, e.key === 'F5' auf die Taste
+            if (e.altKey && e.key === 'F5') {
+                e.preventDefault(); // Verhindert das Neuladen der Seite
+                activateAdmin();
             }
-            
-            // Loop starten
+        });
+
+        function activateAdmin() {
+            if(isAdmin) return;
+            isAdmin = true;
+            document.getElementById('admin-controls').style.display = 'block';
+            document.getElementById('status-text').innerHTML = "AUTHORIZED ACCESS: <span style='color:var(--main-color)'>Rw9</span>";
+            addLog("System: Privileges escalated to OWNER.");
+        }
+
+        // --- MAIN CORE ---
+        function init() {
             setInterval(tick, 1000);
-            animate();
+            animateBG();
+            
+            // Shatter-Effekt für das "e"
+            setInterval(() => {
+                const e = document.getElementById('target-e');
+                if(Math.random() > 0.8) {
+                    e.classList.add('broken');
+                    setTimeout(() => e.classList.remove('broken'), 150);
+                }
+            }, 2500);
+
+            // Chat Commands
+            const input = document.getElementById('chat-input');
+            const display = document.getElementById('chat-display');
+            
+            input.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') {
+                    let val = input.value;
+                    if(val.startsWith("/")) {
+                        let args = val.split(" ");
+                        if(args[0] === "/say") {
+                            let msg = args.slice(1).join(" ");
+                            const ann = document.getElementById('announcement-text');
+                            ann.innerText = msg;
+                            ann.classList.add('show');
+                            setTimeout(() => ann.classList.remove('show'), 4000);
+                        } else if(args[0] === "/color") {
+                            document.documentElement.style.setProperty('--main-color', args[1]);
+                        }
+                    } else {
+                        display.innerHTML += `<div><span style="color:var(--main-color)">[Rw9]:</span> ${val}</div>`;
+                    }
+                    input.value = "";
+                    display.scrollTop = display.scrollHeight;
+                }
+            });
+        }
+
+        function addLog(text) {
+            document.getElementById('chat-display').innerHTML += `<div>> ${text}</div>`;
         }
 
         function tick() {
-            if (finished) return;
-
-            const now = Date.now();
-            const elapsed = Math.floor((now - startTime) / 1000);
-            let percent = (elapsed / DURATION) * 100;
-
-            if (percent >= 100) {
-                percent = 100;
-                complete();
-            }
-
-            // UI Update
-            document.getElementById('progress-fill').style.width = percent + "%";
-            document.getElementById('perc-display').innerText = percent.toFixed(2) + "%";
-
-            // Zeitrechnung
-            let rem = DURATION - elapsed;
-            if (rem < 0) rem = 0;
-            let h = Math.floor(rem / 3600).toString().padStart(2, '0');
-            let m = Math.floor((rem % 3600) / 60).toString().padStart(2, '0');
-            let s = (rem % 60).toString().padStart(2, '0');
-            document.getElementById('eta-display').innerText = `ETA: ${h}:${m}:${s}`;
+            if(duration > 0) duration--;
+            let m = Math.floor(duration/60).toString().padStart(2,'0');
+            let s = (duration%60).toString().padStart(2,'0');
+            document.getElementById('eta').innerText = `ETA: 00:${m}:${s}`;
+            let p = ((maxTime - duration) / maxTime) * 100;
+            document.getElementById('perc').innerText = p.toFixed(2) + "%";
+            document.getElementById('fill').style.width = p + "%";
         }
 
-        function complete() {
-            if (finished) return;
-            finished = true;
-            document.getElementById('alarm').style.display = 'block';
-            console.log("UPDATE FINISHED");
-            
-            setTimeout(() => {
-                // Hier den Link zu deiner Engine v12.9.7 einfügen!
-                alert("DEPLOYING v12.9.7 BETA...");
-                // location.href = "deine_engine.html";
-            }, 5000);
-        }
-
-        function cheat() {
-            // Setzt die Zeit auf 1h 59m 50s
-            startTime = Date.now() - ((DURATION - 10) * 1000);
-            localStorage.setItem(KEY, startTime);
-        }
-
-        // Hintergrund Effekt
+        // --- BACKGROUND ---
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        let p = [];
-        for(let i=0; i<100; i++) p.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*2});
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let dots = [];
+        for(let i=0; i<100; i++) dots.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.5});
 
-        function animate() {
+        function animateBG() {
             ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle = "#bf00ff";
-            p.forEach(dot => {
-                ctx.beginPath();
-                ctx.arc(dot.x, dot.y, dot.r, 0, Math.PI*2);
-                ctx.fill();
-                dot.y -= 0.5;
-                if(dot.y < 0) dot.y = canvas.height;
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
+            dots.forEach(d => {
+                ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2); ctx.fill();
+                d.y -= 0.5;
+                if(d.y < 0) d.y = canvas.height;
             });
-            requestAnimationFrame(animate);
+            requestAnimationFrame(animateBG);
         }
 
         window.onload = init;
-        window.onclick = () => { document.getElementById('bg-music').play(); };
     </script>
 </body>
 </html>

@@ -2,326 +2,209 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>EROBIT LOGISTIC v12.8.5 - Rw9 EDITION</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/theme/tomorrow-night-bright.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/mode/lua/lua.min.js"></script>
-
+    <title>Rw9 SYSTEM DEPLOYMENT | IN PROGRESS</title>
     <style>
         :root {
-            --neon-cyan: #00ffff;
             --neon-purple: #bf00ff;
-            --bg-dark: #000000;
-            --panel-bg: rgba(8, 8, 8, 0.97);
-            --glow-purple: 0 0 25px rgba(191, 0, 255, 0.6);
-            --glow-cyan: 0 0 15px rgba(0, 255, 255, 0.4);
+            --bg-deep: #05000a;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            outline: none;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; overflow: hidden; cursor: none; }
 
-        body, html {
-            height: 100vh;
-            width: 100vw;
-            background: var(--bg-dark);
-            color: #fff;
-            font-family: 'Segoe UI', sans-serif;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        #star-canvas {
-            position: fixed;
-            inset: 0;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* TOP BAR */
-        #top-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.98);
-            border-bottom: 2px solid var(--neon-cyan);
+        body {
+            background-color: #000;
+            font-family: 'Courier New', Courier, monospace;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 50px;
-        }
-
-        .nav-btn {
-            background: transparent;
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            padding: 14px 30px;
-            cursor: pointer;
-            font-weight: 900;
-            text-transform: uppercase;
-            transition: 0.3s;
-            letter-spacing: 2px;
-        }
-
-            .nav-btn:hover {
-                background: var(--neon-cyan);
-                color: #000;
-                box-shadow: 0 0 30px var(--neon-cyan);
-            }
-
-        /* BETA INFO PANEL */
-        #beta-panel {
-            position: fixed;
-            top: 120px;
-            right: 50px;
-            width: 340px;
-            z-index: 500;
-            background: var(--panel-bg);
-            border-right: 6px solid var(--neon-cyan);
-            padding: 30px;
-            box-shadow: var(--glow-cyan);
-        }
-
-        /* VIDEO MODULE */
-        #video-module {
-            position: absolute;
-            top: 200px;
-            left: 50px;
-            width: 380px;
-            z-index: 500;
-            background: var(--panel-bg);
-            border: 2px solid var(--neon-purple);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: var(--glow-purple);
-        }
-
-        .vid-header {
-            background: var(--neon-purple);
-            color: #fff;
-            padding: 15px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .vid-btn {
-            width: 100%;
-            padding: 20px;
-            background: var(--neon-purple);
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
-        /* DRAGGABLE CONSOLE (Rw9 BRANDED TITLE) */
-        #logistic-console {
-            position: absolute;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 900px;
-            height: 480px;
-            background: #020202;
-            border: 1px solid #1a1a1a;
-            z-index: 600;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 30px 100px rgba(0,0,0,1);
-        }
-
-        #drag-bar {
-            background: #080808;
-            height: 50px;
-            cursor: move;
-            display: flex;
-            align-items: center;
-            padding: 0 25px;
-            border-bottom: 1px solid #111;
-        }
-
-        /* CLOCK & VOL */
-        #clock {
-            position: fixed;
-            bottom: 40px;
-            left: 60px;
-            z-index: 1000;
-            font-size: 60px;
-            color: var(--neon-purple);
-            text-shadow: var(--glow-purple);
-            font-family: monospace;
-        }
-
-        #vol-slider {
-            width: 140px;
-            accent-color: var(--neon-purple);
-            cursor: pointer;
-        }
-
-        /* OVERLAYS */
-        #community-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 2000;
-            background: rgba(0,0,0,0.99);
-            display: none;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(25px);
+            height: 100vh;
+            color: #fff;
         }
 
-        .comm-box {
-            width: 900px;
-            padding: 80px;
-            border: 4px solid var(--neon-purple);
-            background: #050505;
+        /* Hintergrund-Animation (Sterne/Rauschen) */
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        #main-container {
+            position: relative;
+            z-index: 10;
             text-align: center;
-            border-radius: 30px;
+            width: 80%;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 15px;
+            color: var(--neon-purple);
+            text-shadow: 0 0 30px var(--neon-purple);
+            margin-bottom: 10px;
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #444;
+            letter-spacing: 4px;
+            margin-bottom: 50px;
+            text-transform: uppercase;
+        }
+
+        /* Der 2-Stunden Ladebalken */
+        .progress-box {
+            width: 100%;
+            height: 4px;
+            background: #111;
+            border-radius: 2px;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0,0,0,1);
+        }
+
+        #bar-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--neon-purple);
+            box-shadow: 0 0 20px var(--neon-purple);
+            transition: width 1s linear;
+        }
+
+        .info-grid {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #222;
+            font-weight: bold;
+        }
+
+        #alarm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 0, 0, 0.2);
+            z-index: 100;
+            display: none;
+            animation: flash 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        @keyframes flash {
+            0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; }
+        }
+
+        /* Versteckter Cheat-Button für dein Video (unten rechts) */
+        #secret-trigger {
+            position: fixed;
+            bottom: 5px; right: 5px;
+            width: 10px; height: 10px;
+            background: transparent;
+            z-index: 1000;
+            cursor: pointer;
         }
     </style>
 </head>
-<body oncontextmenu="return false;" onclick="startAudioOnce()">
+<body>
 
-    <canvas id="star-canvas"></canvas>
+    <canvas id="bg-canvas"></canvas>
+    <div id="alarm-overlay"></div>
+    
+    <audio id="ambient" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
+    <audio id="alarm-sfx"><source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
 
-    <audio id="bg-audio" loop>
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-17.mp3" type="audio/mpeg">
-    </audio>
+    <div id="main-container">
+        <p style="color: #222; margin-bottom: 5px;">PROTOCOL v12.9.8_UPGRADE</p>
+        <h1>SYSTEM UPDATE</h1>
+        <p class="status-text">Owner <b>Rw9</b> is rewriting core modules...</p>
 
-    <div id="top-bar">
-        <button class="nav-btn" onclick="openMenu()">DISCORD / HUB</button>
-        <div style="font-size: 28px; font-weight: 900; letter-spacing: 12px;">EROBIT <span style="color:var(--neon-purple)">LOGISTIC v12.8.5</span></div>
-        <div style="display:flex; align-items:center; gap:20px;">
-            <span style="font-size: 10px; color: var(--neon-purple); font-weight: bold;">GAIN CONTROL</span>
-            <input type="range" id="vol-slider" min="0" max="1" step="0.01" value="0.5" oninput="setVolume(this.value)">
+        <div class="progress-box">
+            <div id="bar-fill"></div>
+        </div>
+
+        <div class="info-grid">
+            <div id="percent">0.00%</div>
+            <div id="eta">ETA: 02:00:00</div>
         </div>
     </div>
 
-    <div id="beta-panel">
-        <div style="color: var(--neon-cyan); font-size: 20px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px;">BETA INFORMATION</div>
-        <div style="font-size: 13px; line-height: 2; color: #888;">
-            <b>Developer:</b> Rw9<br>
-            <b>Discord:</b> deroherta<br>
-            <b>Status:</b> v12.8.5 Build<br>
-            <b>Security:</b> Locked [Rw9]<br>
-            <b>Line Count:</b> 1000+ Active
-        </div>
-    </div>
-
-    <div id="video-module">
-        <div class="vid-header">ROBLOX EXPLOIT TUTORIAL</div>
-        <img src="https://i.ytimg.com/vi/ToyPnBDNapg/maxresdefault.jpg" style="width:100%; height:200px; object-fit:cover; cursor:pointer;" onclick="link('yt')">
-        <button class="vid-btn" onclick="link('yt')">WEITERLEITEN ZU YOUTUBE</button>
-    </div>
-
-    <div id="logistic-console">
-        <div id="drag-bar">
-            <div style="width:12px; height:12px; background:#f44; border-radius:50%; margin-right:15px;"></div>
-            <span style="font-size: 11px; color: #444; font-weight: bold; letter-spacing: 2px;">Rw9_LOGISTIC_ENGINE.bin</span>
-        </div>
-        <textarea id="lua-field"></textarea>
-    </div>
-
-    <div id="community-overlay">
-        <div class="comm-box">
-            <h1 style="color:var(--neon-purple); font-size:50px; letter-spacing:20px; margin-bottom: 50px;">DISCORD HUB</h1>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:40px;">
-                <div style="background:#080808; padding:50px; border:1px solid #1a1a1a;">
-                    <h2 style="color:var(--neon-cyan); margin-bottom: 20px;">COMMUNITY</h2>
-                    <button class="nav-btn" style="width:100%;" onclick="link('dc')">BEITRETEN</button>
-                </div>
-                <div style="background:#080808; padding:50px; border:1px solid #1a1a1a;">
-                    <h2 style="color:var(--neon-purple); margin-bottom: 20px;">PARTNER</h2>
-                    <p style="color:#444; font-size:12px;">Rw9 (deroherta) | 1F0 | Infinite Yield</p>
-                </div>
-            </div>
-            <button class="nav-btn" style="margin-top:60px;" onclick="closeMenu()">CLOSE_HUB</button>
-        </div>
-    </div>
-
-    <div id="clock">00:00:00</div>
+    <div id="secret-trigger" onclick="skipWait()"></div>
 
     <script>
-        /**
-        * ========================================================================
-        * GIGA ENGINE SCRIPTING v12.8.5
-        * EXTENDED SYSTEM MODULES - CLEAN INPUT EDITION
-        * ========================================================================
-        */
-        const audio = document.getElementById('bg-audio');
-        const consoleUnit = document.getElementById('logistic-console');
-        const dragBar = document.getElementById('drag-bar');
-        const canvas = document.getElementById('star-canvas');
-        const ctx = canvas.getContext('2d');
-        let audioStarted = false;
+        const TOTAL_TIME = 7200; // 2 Stunden in Sekunden
+        let secondsPassed = 0;
+        let isComplete = false;
 
-        function startAudioOnce() { if (!audioStarted) { audio.play(); audioStarted = true; } }
-        function setVolume(v) { audio.volume = v; }
-        function openMenu() { document.getElementById('community-overlay').style.display = 'flex'; startAudioOnce(); }
-        function closeMenu() { document.getElementById('community-overlay').style.display = 'none'; }
-        function link(t) {
-        if(t === 'dc') window.open("https://discord.gg/au824BJXF5", "_blank");
-        if(t === 'yt') window.open("https://www.youtube.com/watch?v=ToyPnBDNapg", "_blank");
+        function update() {
+            if(isComplete) return;
+
+            secondsPassed++;
+            let progress = (secondsPassed / TOTAL_TIME) * 100;
+            
+            // UI Update
+            document.getElementById('bar-fill').style.width = progress + "%";
+            document.getElementById('percent').innerText = progress.toFixed(2) + "%";
+
+            // Zeitberechnung
+            let remaining = TOTAL_TIME - secondsPassed;
+            let h = Math.floor(remaining / 3600).toString().padStart(2, '0');
+            let m = Math.floor((remaining % 3600) / 60).toString().padStart(2, '0');
+            let s = (remaining % 60).toString().padStart(2, '0');
+            document.getElementById('eta').innerText = `ETA: ${h}:${m}:${s}`;
+
+            if(secondsPassed >= TOTAL_TIME) {
+                finishUpdate();
+            }
         }
 
-        // BACKGROUND
-        function initStars() {
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        stars = [];
-        for(let i=0; i<300; i++) {
-        stars.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2, o: Math.random(), v: (Math.random()-0.5)*0.2 });
+        function finishUpdate() {
+            isComplete = true;
+            document.getElementById('alarm-overlay').style.display = 'block';
+            document.getElementById('alarm-sfx').play();
+            
+            setTimeout(() => {
+                // Hier wird nach dem Alarm auf die eigentliche Engine v12.9.7 Beta weitergeleitet
+                // Du kannst hier auch einfach ein Alert machen oder den Inhalt austauschen
+                alert("UPDATE COMPLETE. DEPLOYING v12.9.7 BETA...");
+                location.href = "v1297_engine.html"; // Oder wie deine Hauptdatei heißt
+            }, 5000);
         }
+
+        // CHEAT FÜR DICH: Wenn du im Video nicht warten willst, klick unten rechts in die Ecke!
+        function skipWait() {
+            secondsPassed = 7195; 
+            document.getElementById('ambient').play(); // Musik startet beim ersten Klick
         }
-        window.onresize = initStars;
-        let stars = [];
-        initStars();
 
-        function render() {
-        ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width, canvas.height);
-        ctx.fillStyle = '#fff';
-        stars.forEach(s => {
-        ctx.globalAlpha = s.o;
-        ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
-        s.o += s.v; if(s.o < 0.1 || s.o > 1) s.v *= -1;
-        });
-        requestAnimationFrame(render);
+        // Hintergrund Animation
+        const c = document.getElementById('bg-canvas');
+        const ctx = c.getContext('2d');
+        c.width = window.innerWidth; c.height = window.innerHeight;
+        let dots = [];
+        for(let i=0; i<200; i++) dots.push({x: Math.random()*c.width, y: Math.random()*c.height, s: Math.random()*2});
+        
+        function draw() {
+            ctx.clearRect(0,0,c.width,c.height);
+            ctx.fillStyle = "#bf00ff";
+            dots.forEach(d => {
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, d.s, 0, 7);
+                ctx.fill();
+                d.y -= 0.2; if(d.y < 0) d.y = c.height;
+            });
+            requestAnimationFrame(draw);
         }
-        render();
+        draw();
 
-        // DRAG
-        let dragging = false, startX, startY;
-        dragBar.onmousedown = (e) => { dragging = true; startX = e.clientX - consoleUnit.offsetLeft; startY = e.clientY - consoleUnit.offsetTop; };
-        window.onmousemove = (e) => {
-        if(!dragging) return;
-        consoleUnit.style.left = (e.clientX - startX + consoleUnit.offsetWidth/2) + 'px';
-        consoleUnit.style.top = (e.clientY - startY) + 'px';
-        consoleUnit.style.bottom = 'auto'; consoleUnit.style.transform = 'translateX(-50%)';
-        };
-        window.onmouseup = () => dragging = false;
-
-        // EDITOR (CLEAN SLATE - USER CAN TYPE)
-        window.onload = () => {
-        CodeMirror.fromTextArea(document.getElementById("lua-field"), {
-        mode: "lua", theme: "tomorrow-night-bright", lineNumbers: true
-        }).setValue(""); // LEER GELASSEN FÜR DIE USER
-        };
-
-        setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
-
-        // --- GIGA PADDING MODULES (RETAINING 1000+ LINE VOLUME) ---
-        // [BLOCK_SECURITY_IDENTITY_SYNC_Rw9]
-        // [USER_INPUT_PROTOCOL_CLEAN_SLATE_ENABLED]
-        // [BETA_INFO_ARRAY_STABILIZER_Rw9]
-        // [FULLSCREEN_ADAPTIVE_ENGINE_V12_RUNNING]
-        // (Über 700 weitere Zeilen im Hintergrund...)
+        // Start
+        setInterval(update, 1000);
+        window.onclick = () => { document.getElementById('ambient').play(); }; // Musik-Aktivierung
     </script>
 </body>
 </html>

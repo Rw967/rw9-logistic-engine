@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Rw9 | PRIVATE CORE v13.0.5</title>
+    <title>Rw9 | ONLINE SYNC v13.0.5</title>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <style>
         :root { --neon-purple: #bf00ff; --main-color: var(--neon-purple); }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', monospace; }
@@ -10,138 +11,122 @@
 
         #bg-canvas { position: absolute; inset: 0; z-index: 1; opacity: 0.3; }
 
-        /* ADMIN INTERFACE (Standardmäßig versteckt) */
-        #admin-controls { display: none; }
-
         /* ROBLOX BROADCAST */
         #broadcast-layer { position: fixed; top: 15%; width: 100%; text-align: center; z-index: 2000; pointer-events: none; }
         .announcement { 
             font-size: 38px; font-weight: 900; color: #fff; 
             text-shadow: 0 0 25px var(--main-color); 
             background: rgba(0,0,0,0.6); display: inline-block; padding: 15px 50px; 
-            border-radius: 12px; transform: scale(0); transition: 0.4s; 
+            border-radius: 12px; transform: scale(0); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .announcement.show { transform: scale(1); }
 
-        /* CHAT UNTEN LINKS */
-        #chat-box { position: fixed; bottom: 30px; left: 30px; width: 380px; background: rgba(0,0,0,0.8); border: 1px solid #1a1a1a; padding: 15px; z-index: 1000; }
+        /* ADMIN CHAT (Wird nur per Alt+S sichtbar) */
+        #chat-box { display: none; position: fixed; bottom: 30px; left: 30px; width: 380px; background: rgba(0,0,0,0.85); border: 1px solid #1a1a1a; padding: 15px; z-index: 1000; border-radius: 5px; }
         #chat-display { height: 120px; overflow-y: auto; font-size: 13px; margin-bottom: 10px; color: #555; }
         #chat-input { width: 100%; background: #0a0a0a; border: 1px solid #222; color: #fff; padding: 10px; outline: none; border-left: 3px solid var(--main-color); }
 
-        /* SYSTEM UPDATE UI */
+        /* MAIN UI */
         #update-ui { position: relative; z-index: 10; text-align: center; width: 650px; }
         h1 { font-size: 55px; letter-spacing: 15px; color: var(--main-color); text-shadow: 0 0 30px var(--main-color); font-weight: 900; }
-        
-        /* Das kaputte "e" */
         .flacker-e { display: inline-block; }
         .broken { opacity: 0.1; transform: translate(4px, -2px) skewX(20deg); filter: blur(2px); }
-
-        .owner-info { color: #222; font-size: 11px; letter-spacing: 4px; margin-top: 25px; }
+        
+        #status-text { color: #151515; font-size: 11px; letter-spacing: 4px; margin-top: 25px; font-weight: bold; text-transform: uppercase; }
         .progress-bar { width: 100%; height: 3px; background: #080808; margin-top: 40px; overflow: hidden; }
-        #fill { height: 100%; background: var(--main-color); width: 0%; box-shadow: 0 0 20px var(--main-color); transition: 1s linear; }
-        .stats { display: flex; justify-content: space-between; margin-top: 20px; font-size: 11px; color: #111; }
+        #fill { height: 100%; background: var(--main-color); width: 45.12%; transition: 1s linear; }
+        .stats { display: flex; justify-content: space-between; margin-top: 20px; font-size: 11px; color: #0a0a0a; }
     </style>
 </head>
 <body>
 
     <canvas id="bg-canvas"></canvas>
 
-    <div id="admin-controls">
-        <div id="broadcast-layer">
-            <div id="announcement-text" class="announcement">ADMIN ACCESS GRANTED</div>
-        </div>
-        <div id="chat-box">
-            <div id="chat-display"></div>
-            <input type="text" id="chat-input" placeholder="Enter Command...">
-        </div>
+    <div id="broadcast-layer"><div id="announcement-text" class="announcement"></div></div>
+    
+    <div id="chat-box">
+        <div id="chat-display"></div>
+        <input type="text" id="chat-input" placeholder="Admin Command...">
     </div>
 
     <div id="update-ui">
-        <p style="color:#080808; font-size:9px; margin-bottom:10px; letter-spacing:5px;">Rw9_PRIVATE_KERNEL_v13.0.5</p>
+        <p style="color:#080808; font-size:9px; margin-bottom:10px; letter-spacing:5px;">Rw9_ONLINE_KERNEL_v13.0.5</p>
         <h1>SYSTEM UPDAT<span id="target-e" class="flacker-e">e</span></h1>
-        <div class="owner-info" id="status-text">WAITING FOR AUTHORIZATION...</div>
+        <div id="status-text">SYSTEM STANDBY...</div>
         <div class="progress-bar"><div id="fill"></div></div>
         <div class="stats">
-            <div id="perc">0.00%</div>
-            <div id="eta">ETA: 00:23:00</div>
+            <div id="perc-display">45.12%</div>
+            <div id="eta-display">ETA: 00:23:00</div>
         </div>
     </div>
 
     <script>
-        let duration = 23 * 60; 
-        const maxTime = 23 * 60;
+        // --- ONLINE SYNC ---
+        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+        const rw9Data = gun.get('rw9_global_v13');
+
+        let duration = 23 * 60; // 23 Minuten
+        const startPercent = 45.12;
         let isAdmin = false;
 
-        // --- HOTKEY DETECTION (ALT + F5) ---
-        window.addEventListener('keydown', function(e) {
-            // e.altKey prüft auf Alt, e.key === 'F5' auf die Taste
-            if (e.altKey && e.key === 'F5') {
-                e.preventDefault(); // Verhindert das Neuladen der Seite
-                activateAdmin();
+        // --- LOGIN / HOTKEY ---
+        window.addEventListener('keydown', (e) => {
+            if (e.altKey && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault();
+                isAdmin = true;
+                document.getElementById('chat-box').style.display = 'block';
+                document.getElementById('status-text').innerHTML = "AUTHORIZED ACCESS: <span style='color:var(--main-color)'>Rw9</span>";
+                rw9Data.put({ status: "AUTHORIZED ACCESS: <span style='color:var(--main-color)'>Rw9</span>" });
             }
         });
 
-        function activateAdmin() {
-            if(isAdmin) return;
-            isAdmin = true;
-            document.getElementById('admin-controls').style.display = 'block';
-            document.getElementById('status-text').innerHTML = "AUTHORIZED ACCESS: <span style='color:var(--main-color)'>Rw9</span>";
-            addLog("System: Privileges escalated to OWNER.");
-        }
+        // --- SYNC RECEIVER (Was die anderen sehen) ---
+        rw9Data.on((data) => {
+            if(data.msg) {
+                const ann = document.getElementById('announcement-text');
+                ann.innerText = data.msg;
+                ann.classList.add('show');
+                setTimeout(() => ann.classList.remove('show'), 4000);
+            }
+            if(data.color) document.documentElement.style.setProperty('--main-color', data.color);
+            if(data.status) document.getElementById('status-text').innerHTML = data.status;
+        });
 
-        // --- MAIN CORE ---
-        function init() {
-            setInterval(tick, 1000);
-            animateBG();
-            
-            // Shatter-Effekt für das "e"
+        // --- ADMIN COMMANDS ---
+        const input = document.getElementById('chat-input');
+        input.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                let val = input.value;
+                if(val.startsWith("/say ")) rw9Data.put({ msg: val.replace("/say ", "") });
+                if(val.startsWith("/color ")) rw9Data.put({ color: val.split(" ")[1] });
+                input.value = "";
+            }
+        });
+
+        // --- TIMER & UI ENGINE ---
+        function startEngine() {
             setInterval(() => {
-                const e = document.getElementById('target-e');
-                if(Math.random() > 0.8) {
-                    e.classList.add('broken');
-                    setTimeout(() => e.classList.remove('broken'), 150);
+                // Timer runter
+                if(duration > 0) duration--;
+                let m = Math.floor(duration/60).toString().padStart(2, '0');
+                let s = (duration%60).toString().padStart(2, '0');
+                document.getElementById('eta-display').innerText = `ETA: 00:${m}:${s}`;
+
+                // Prozent hoch (Simuliert)
+                let currentP = startPercent + (( (23*60) - duration ) / 20); 
+                if(currentP > 100) currentP = 100;
+                document.getElementById('perc-display').innerText = currentP.toFixed(2) + "%";
+                document.getElementById('fill').style.width = currentP + "%";
+
+                // Shatter "e"
+                const eElem = document.getElementById('target-e');
+                if(Math.random() > 0.85) {
+                    eElem.classList.add('broken');
+                    setTimeout(() => eElem.classList.remove('broken'), 150);
                 }
-            }, 2500);
+            }, 1000);
 
-            // Chat Commands
-            const input = document.getElementById('chat-input');
-            const display = document.getElementById('chat-display');
-            
-            input.addEventListener('keypress', (e) => {
-                if(e.key === 'Enter') {
-                    let val = input.value;
-                    if(val.startsWith("/")) {
-                        let args = val.split(" ");
-                        if(args[0] === "/say") {
-                            let msg = args.slice(1).join(" ");
-                            const ann = document.getElementById('announcement-text');
-                            ann.innerText = msg;
-                            ann.classList.add('show');
-                            setTimeout(() => ann.classList.remove('show'), 4000);
-                        } else if(args[0] === "/color") {
-                            document.documentElement.style.setProperty('--main-color', args[1]);
-                        }
-                    } else {
-                        display.innerHTML += `<div><span style="color:var(--main-color)">[Rw9]:</span> ${val}</div>`;
-                    }
-                    input.value = "";
-                    display.scrollTop = display.scrollHeight;
-                }
-            });
-        }
-
-        function addLog(text) {
-            document.getElementById('chat-display').innerHTML += `<div>> ${text}</div>`;
-        }
-
-        function tick() {
-            if(duration > 0) duration--;
-            let m = Math.floor(duration/60).toString().padStart(2,'0');
-            let s = (duration%60).toString().padStart(2,'0');
-            document.getElementById('eta').innerText = `ETA: 00:${m}:${s}`;
-            let p = ((maxTime - duration) / maxTime) * 100;
-            document.getElementById('perc').innerText = p.toFixed(2) + "%";
-            document.getElementById('fill').style.width = p + "%";
+            animateBG();
         }
 
         // --- BACKGROUND ---
@@ -149,20 +134,19 @@
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         let dots = [];
-        for(let i=0; i<100; i++) dots.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.5});
+        for(let i=0; i<80; i++) dots.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.5});
 
         function animateBG() {
             ctx.clearRect(0,0,canvas.width,canvas.height);
             ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
             dots.forEach(d => {
                 ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2); ctx.fill();
-                d.y -= 0.5;
-                if(d.y < 0) d.y = canvas.height;
+                d.y -= 0.4; if(d.y < 0) d.y = canvas.height;
             });
             requestAnimationFrame(animateBG);
         }
 
-        window.onload = init;
+        window.onload = startEngine;
     </script>
 </body>
 </html>

@@ -2,171 +2,711 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Rw9 | REAL-TIME SYNC v13.0.5</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rw9 LOGISTIC v12.9.9 | ENTERPRISE NETWORK MONITOR</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/codemirror.min.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/theme/tomorrow-night-bright.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.11/mode/lua/lua.min.js"></script>
+
     <style>
-        :root { --neon-purple: #bf00ff; --main-color: #bf00ff; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', monospace; }
-        body { background: #000; color: #fff; height: 100vh; width: 100vw; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+                :root {
+                        --neon-cyan: #00ffff;
+                        --neon-purple: #bf00ff;
+                        --owner-gold: #ffcc00;
+                        --bg-deep: #010101;
+                        --panel-bg: rgba(6, 6, 6, 0.98);
+                        --border-dim: #111;
+                        --text-main: #e0e0e0;
+                        --glow-standard: 0 0 15px rgba(191, 0, 255, 0.2);
+                        --transition-speed: 0.4s;
 
-        #bg-canvas { position: absolute; inset: 0; z-index: 1; opacity: 0.3; }
-
-        /* ROBLOX BROADCAST (Mitte Oben) */
-        #broadcast-layer { position: fixed; top: 15%; width: 100%; text-align: center; z-index: 2000; pointer-events: none; }
-        .announcement { 
-            font-size: 38px; font-weight: 900; color: #fff; 
-            text-shadow: 0 0 25px var(--main-color); 
-            background: rgba(0,0,0,0.7); display: inline-block; padding: 15px 50px; 
-            border-radius: 12px; transform: scale(0); transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
         }
-        .announcement.show { transform: scale(1); }
 
-        /* ADMIN CHAT */
-        #chat-box { display: none; position: fixed; bottom: 30px; left: 30px; width: 380px; background: rgba(0,0,0,0.9); border: 1px solid #222; padding: 15px; z-index: 1000; }
-        #chat-display { height: 100px; overflow-y: auto; font-size: 12px; margin-bottom: 10px; color: #444; }
-        #chat-input { width: 100%; background: #050505; border: 1px solid #333; color: #fff; padding: 10px; outline: none; border-left: 3px solid var(--main-color); }
 
-        /* SYSTEM UI */
-        #update-ui { position: relative; z-index: 10; text-align: center; width: 650px; }
-        h1 { font-size: 55px; letter-spacing: 15px; color: var(--main-color); text-shadow: 0 0 30px var(--main-color); }
-        .flacker-e { display: inline-block; }
-        .broken { opacity: 0.1; filter: blur(2px); transform: translateX(3px); }
-        
-        #status-text { color: #1a1a1a; font-size: 11px; letter-spacing: 4px; margin-top: 25px; font-weight: bold; }
-        .progress-bar { width: 100%; height: 3px; background: #080808; margin-top: 40px; overflow: hidden; }
-        #fill { height: 100%; background: var(--main-color); width: 45.12%; transition: 1s linear; }
-        .stats { display: flex; justify-content: space-between; margin-top: 20px; font-size: 11px; color: #0a0a0a; }
+        /* --- GLOBAL ANIMATIONS --- */
+                @keyframes pulse-gold {
+            0% {
+                box-shadow: 0 0 5px var(--owner-gold);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--owner-gold);
+            }
+
+            100% {
+                box-shadow: 0 0 5px var(--owner-gold);
+            }
+        }
+
+                @keyframes scanline {
+            0% {
+                transform: translateY(-100%);
+            }
+
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+                @keyframes drift {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 100% 100%;
+            }
+        }
+
+                * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            cursor: crosshair;
+            outline: none;
+        }
+
+                body, html {
+                          height: 100vh;
+            width: 100vw;
+            background: var(--bg-deep);
+            color: var(--text-main);
+                          font-family: 'Segoe UI', 'Consolas', monospace;
+            overflow: hidden;
+
+        }
+
+                #star-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+
+        /* --- LOGIN SYSTEM --- */
+                #login-gate {
+                          position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
+                          z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+        }
+
+                .login-card {
+                          width: 480px;
+            padding: 60px;
+            border: 1px solid var(--neon-purple);
+                          background: #050505;
+            text-align: center;
+            position: relative;
+                        box-shadow: 0 0 40px rgba(0,0,0,1);
+
+        }
+
+                    .login-card::before {
+                            content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                            background: linear-gradient(90deg, transparent, var(--neon-purple), transparent);
+                            animation: drift 2s linear infinite;
+
+            }
+
+                .login-input {
+                          width: 100%;
+            padding: 16px;
+            background: #000;
+            border: 1px solid #1a1a1a;
+                          color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-family: 'Consolas';
+                        transition: var(--transition-speed);
+
+        }
+
+                    .login-input:focus {
+                border-color: var(--neon-cyan);
+                box-shadow: 0 0 15px rgba(0,255,255,0.1);
+            }
+
+
+        /* --- HEADER NAVIGATION --- */
+                #main-header {
+                          position: fixed;
+            top: 0;
+            width: 100%;
+            height: 90px;
+            z-index: 2000;
+                          background: rgba(0, 0, 0, 0.96);
+            border-bottom: 1px solid var(--neon-cyan);
+                          display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 60px;
+                        box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+
+        }
+
+                .logo-text {
+            font-weight: 900;
+            letter-spacing: 8px;
+            font-size: 26px;
+            text-transform: uppercase;
+        }
+
+                .user-block {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+
+                    .user-block:hover {
+                background: rgba(255,255,255,0.02);
+            }
+
+
+        /* --- SIDEBARS --- */
+                .sidebar {
+            position: fixed;
+            top: 90px;
+            bottom: 0;
+            background: var(--panel-bg);
+            z-index: 1500;
+            padding: 35px;
+            border-color: var(--border-dim);
+        }
+
+                #left-sidebar {
+            left: 0;
+            width: 320px;
+            border-right: 1px solid var(--border-dim);
+        }
+
+                #right-sidebar {
+            right: 0;
+            width: 420px;
+            border-left: 1px solid var(--border-dim);
+        }
+
+
+        /* --- CENTRAL EDITOR --- */
+                #editor-workspace {
+                          position: absolute;
+            left: 350px;
+            right: 450px;
+            top: 120px;
+            bottom: 40px;
+                          background: #000;
+            border: 1px solid #111;
+            z-index: 1000;
+                          box-shadow: 0 0 30px rgba(0,0,0,0.8);
+
+        }
+
+                .CodeMirror {
+            height: 100% !important;
+            font-size: 15px;
+            background: transparent !important;
+        }
+
+
+
+
+
+
+        /* --- UI COMPONENTS --- */
+                .rw9-button {
+                          background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+                          padding: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+                          cursor: pointer;
+            width: 100%;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+                        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        }
+
+                .rw9-button:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0,255,255,0.4);
+        }
+
+                .gold-button {
+            border-color: var(--owner-gold);
+            color: var(--owner-gold);
+        }
+
+                    .gold-button:hover {
+                background: var(--owner-gold);
+                color: #000;
+                box-shadow: 0 0 20px var(--owner-gold);
+            }
+
+
+        /* NEW: Blackout Style */
+                .blackout-button {
+            border-color: #ff3333;
+            color: #ff3333;
+            margin-top: 10px;
+        }
+
+                .blackout-button:hover {
+            background: #ff3333;
+            color: #000;
+            box-shadow: 0 0 20px rgba(255,51,51,0.5);
+        }
+
+                .modal-container {
+                          position: fixed;
+            background: #070707;
+            border: 1px solid var(--neon-purple);
+                          padding: 40px;
+            z-index: 6000;
+            display: none;
+            box-shadow: 0 0 100px #000;
+
+        }
+
+                #net-manager-ui {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+        }
+
+                .user-list-item {
+                          display: flex;
+            justify-content: space-between;
+            padding: 15px;
+                          border-bottom: 1px solid #111;
+            font-size: 13px;
+            align-items: center;
+
+        }
+
+                .online-indicator {
+            width: 10px;
+            height: 10px;
+            background: #00ff44;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 12px;
+            box-shadow: 0 0 8px #00ff44;
+        }
+
+
+                #clock-display {
+            position: fixed;
+            bottom: 40px;
+            left: 40px;
+            font-size: 50px;
+            color: var(--neon-purple);
+            opacity: 0.15;
+            font-weight: 900;
+            pointer-events: none;
+        }
+
+
+
+
+
+
+        /* --- SCROLLBAR --- */
+                ::-webkit-scrollbar {
+            width: 3px;
+        }
+
+                ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+                ::-webkit-scrollbar-thumb {
+            background: #222;
+        }
+
+                    ::-webkit-scrollbar-thumb:hover {
+                background: var(--neon-purple);
+            }
+
+
     </style>
 </head>
 <body>
 
-    <canvas id="bg-canvas"></canvas>
+    <canvas id="star-canvas"></canvas>
 
-    <div id="broadcast-layer"><div id="announcement-text" class="announcement"></div></div>
-    
-    <div id="chat-box">
-        <div id="chat-display"></div>
-        <input type="text" id="chat-input" placeholder="Type /say [text]...">
-    </div>
-
-    <div id="update-ui">
-        <p style="color:#080808; font-size:9px; margin-bottom:10px; letter-spacing:5px;">Rw9_LIVE_SYNC_v13.0.5</p>
-        <h1>SYSTEM UPDAT<span id="target-e" class="flacker-e">e</span></h1>
-        <div id="status-text">CONNECTING TO NETWORK...</div>
-        <div class="progress-bar"><div id="fill"></div></div>
-        <div class="stats">
-            <div id="perc-display">45.12%</div>
-            <div id="eta-display">ETA: 00:23:00</div>
+    <div id="login-gate">
+        <div class="login-card">
+            <h1 style="color: var(--neon-purple); letter-spacing: 12px; margin-bottom: 10px;">Rw9 ENGINE</h1>
+            <p style="font-size: 10px; color: #333; margin-bottom: 40px;">SECURE LOGISTIC GATEWAY V.12.9.9</p>
+            <input type="text" id="inp-user" class="login-input" placeholder="IDENTIFICATION">
+            <input type="password" id="inp-pass" class="login-input" placeholder="CRYPTIC KEY">
+            <button class="rw9-button" onclick="attemptAuth()">ESTABLISH HANDSHAKE</button>
+            <div style="margin-top: 25px; font-size: 8px; color: #151515;">ENCRYPTION: RSA-4096 ENABLED</div>
         </div>
     </div>
 
+    <div id="main-header">
+        <div class="logo-text">EROBIT <span style="color: var(--neon-purple)">LOGISTIC</span></div>
+        <div class="user-block" onclick="toggleElement('identity-modal')">
+            <div style="text-align: right">
+                <div style="font-size: 10px; color: #444; letter-spacing: 1px;">ENCRYPTED SESSION</div>
+
+                <div id="profile-name" style="color:
+var(--neon-cyan); font-weight: bold; font-size:
+18px;">UNAUTHORIZED</div>
+            </div>
+
+            <div style="width: 50px; height: 50px; background:
+#0a0a0a; border: 1px solid #1a1a1a; display: flex; align-items: center;
+justify-content: center; font-weight: 900; color:
+var(--neon-purple);">
+                <span id="profile-icon">?</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="identity-modal" class="modal-container" style="top: 105px; right: 60px; width: 380px;">
+
+        <h3 style="font-size: 13px; color: var(--neon-purple);
+margin-bottom: 30px; letter-spacing: 3px;">
+            IDENTITY
+            OVERRIDE
+        </h3>
+        <p style="font-size: 10px; color: #444; margin-bottom: 15px;">CHANGE BROADCAST NAME:</p>
+
+        <input type="text" id="new-identity-name"
+               class="login-input" style="text-align: left; padding: 12px;"
+               placeholder="New Alias...">
+        <button class="rw9-button" onclick="syncIdentity()">UPDATE GLOBAL ID</button>
+
+        <button class="rw9-button blackout-button" onclick="triggerBlackout()">BLACKOUT (LOGOUT)</button>
+
+        <button class="rw9-button" style="border-color: #222; color:
+ #333;"
+                onclick="toggleElement('identity-modal')">
+            DISMISS
+        </button>
+    </div>
+
+    <div id="net-manager-ui" class="modal-container">
+
+        <h2 style="color: var(--neon-purple); letter-spacing: 5px;
+margin-bottom: 30px; font-size: 18px;">
+            NETWORK MONITOR
+        </h2>
+        <div style="background: #000; border: 1px solid #111; height: 300px; overflow-y: auto;" id="net-user-list">
+        </div>
+        <div style="margin-top: 30px;">
+            <button class="rw9-button" onclick="toggleElement('net-manager-ui')">CLOSE MONITOR</button>
+        </div>
+    </div>
+
+    <div class="sidebar" id="left-sidebar">
+
+        <h4 style="color: var(--neon-cyan); font-size: 12px;
+margin-bottom: 35px; letter-spacing: 5px;">
+            RESOURCES
+        </h4>
+        <button class="rw9-button" onclick="loadScript('fly')">FLY ENGINE V3</button>
+        <button class="rw9-button" onclick="loadScript('iy')">INFINITE YIELD</button>
+        <button class="rw9-button" onclick="loadScript('speed')">WALKSPEED (200)</button>
+        <button class="rw9-button" onclick="loadScript('aim')">SILENT AIM V2</button>
+
+
+        <div id="owner-controls" style="display: none; margin-top:
+50px; padding-top: 30px; border-top: 1px solid #111;">
+            <p style="font-size: 10px; color: var(--owner-gold); margin-bottom: 20px;">OWNER PRIVILEGES</p>
+
+            <button class="rw9-button gold-button"
+                    onclick="toggleElement('net-manager-ui')">
+                NETWORK
+                MANAGER
+            </button>
+            <button class="rw9-button gold-button" style="opacity: 0.5;">SERVER BYPASS</button>
+        </div>
+    </div>
+
+    <div id="editor-workspace">
+
+        <div style="background: #050505; padding: 12px 25px;
+border-bottom: 1px solid #111; display: flex; justify-content:
+space-between; align-items: center;">
+            <span style="font-size: 10px; color: #333; letter-spacing: 2px;">FILE: RW9_CORE_KERNEL.LUA</span>
+            <span style="font-size: 10px; color: var(--neon-purple);">UTF-8 / LUA</span>
+        </div>
+        <textarea id="editor-raw"></textarea>
+    </div>
+
+    <div class="sidebar" id="right-sidebar">
+
+        <h4 style="color: var(--neon-cyan); font-size: 12px;
+margin-bottom: 35px; letter-spacing: 5px;">
+            LIVE TELEMETRY
+        </h4>
+
+        <div id="telemetry-box" style="height: 450px; overflow-y:
+auto; background: #030303; padding: 15px; border-left: 1px solid
+var(--neon-purple); font-size: 11px; line-height: 1.6; color: #555;">
+
+            <div>[0x001] System Initialization... OK</div>
+        </div>
+        <div style="margin-top: 30px; font-size: 11px; border-top: 1px solid #111; padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>LATENCY:</span><span id="stat-ping" style="color: var(--neon-cyan);">14ms</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>ENCRYPTION:</span><span style="color: var(--neon-purple);">ACTIVE</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="clock-display">00:00:00</div>
+
     <script>
-        // --- LIVE SYNC ENGINE ---
-        // Wir nutzen mehrere Relay-Server für bessere Stabilität
-        const gun = Gun([
-            'https://gun-manhattan.herokuapp.com/gun',
-            'https://gun-ams1.marda.io/gun'
-        ]);
-        const systemNode = gun.get('rw9_super_sync_v2');
 
-        let duration = 23 * 60;
-        let isAdmin = false;
+        /**          * Rw9 LOGISTIC KERNEL - v12.9.9
+        * CORE SCRIPT LOGIC & UI BRIDGE
+        */
+        let codeMirrorInstance;
+        let userData = { name: "Guest", role: "user", id: 0 };
 
-        // --- AUTH (ALT + S) ---
-        window.addEventListener('keydown', (e) => {
-            if (e.altKey && (e.key === 's' || e.key === 'S')) {
-                e.preventDefault();
-                isAdmin = true;
-                document.getElementById('chat-box').style.display = 'block';
-                document.getElementById('status-text').innerHTML = "AUTHORIZED ACCESS: <span style='color:var(--main-color)'>Rw9</span>";
-            }
+        window.onload = function() {
+        // Initialize Editor
+        codeMirrorInstance = CodeMirror.fromTextArea(document.getElementById("editor-raw"), {
+        mode: "lua",
+        theme: "tomorrow-night-bright",
+        lineNumbers: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        indentUnit: 4
         });
 
-        // --- REAL-TIME RECEIVER (Das ist das "Live"-Teil) ---
-        systemNode.on((data) => {
-            // Wenn eine neue Nachricht kommt
-            if(data.msg && data.timestamp !== window.lastMsgTime) {
-                window.lastMsgTime = data.timestamp;
-                const ann = document.getElementById('announcement-text');
-                ann.innerText = data.msg;
-                ann.classList.add('show');
-                
-                // Sound-Effekt simulieren (optional)
-                console.log("NEUE NACHRICHT LIVE: " + data.msg);
+        // Check Persistent Session
+        const cacheName = localStorage.getItem("rw9_session_user");
+        const cacheRole = localStorage.getItem("rw9_session_role");
 
-                setTimeout(() => ann.classList.remove('show'), 4000);
-            }
-            // Wenn Farbe geändert wird
-            if(data.color) {
-                document.documentElement.style.setProperty('--main-color', data.color);
-            }
-        });
-
-        // --- ADMIN SENDEN ---
-        const input = document.getElementById('chat-input');
-        input.addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') {
-                let val = input.value;
-                if(val.startsWith("/say ")) {
-                    // Wir schicken einen Zeitstempel mit, damit Gun.js merkt: "Das ist neu!"
-                    systemNode.put({ 
-                        msg: val.replace("/say ", ""), 
-                        timestamp: Date.now() 
-                    });
-                }
-                if(val.startsWith("/color ")) {
-                    systemNode.put({ color: val.split(" ")[1] });
-                }
-                input.value = "";
-            }
-        });
-
-        // --- TIMER & PROGRESS ---
-        function startUI() {
-            document.getElementById('status-text').innerText = "SYSTEM STANDBY...";
-            
-            setInterval(() => {
-                // Timer
-                if(duration > 0) duration--;
-                let m = Math.floor(duration/60).toString().padStart(2, '0');
-                let s = (duration%60).toString().padStart(2, '0');
-                document.getElementById('eta-display').innerText = `ETA: 00:${m}:${s}`;
-
-                // Prozentrechnung (von 45.12% auf 100% innerhalb der 23 Min)
-                let elapsed = (23 * 60) - duration;
-                let currentP = 45.12 + (elapsed * (54.88 / (23 * 60)));
-                document.getElementById('perc-display').innerText = currentP.toFixed(2) + "%";
-                document.getElementById('fill').style.width = currentP + "%";
-
-                // Das "e" flackert
-                const e = document.getElementById('target-e');
-                if(Math.random() > 0.9) {
-                    e.classList.add('broken');
-                    setTimeout(() => e.classList.remove('broken'), 100);
-                }
-            }, 1000);
-            
-            animateBG();
+        if(cacheName && cacheRole) {
+        userData.name = cacheName;
+        userData.role = cacheRole;
+        bootMainSystem();
         }
 
-        // --- BACKGROUND ---
-        const canvas = document.getElementById('bg-canvas');
+        initBackgroundEffects();
+        startUpdateCycles();
+        };
+
+        function attemptAuth() {
+        const u = document.getElementById('inp-user').value || "Guest_" + Math.floor(Math.random()*999);
+        const p = document.getElementById('inp-pass').value;
+
+        if(p === "2010") { userData.role = "owner"; userData.name = u; }
+        else if(p === "2026") { userData.role = "user"; userData.name = u; }
+        else { alert("INVALID RSA KEY - ACCESS DENIED"); return; }
+
+        localStorage.setItem("rw9_session_user", userData.name);
+        localStorage.setItem("rw9_session_role", userData.role);
+        bootMainSystem();
+        }
+
+        function bootMainSystem() {
+        document.getElementById('login-gate').style.display = 'none';
+        document.getElementById('profile-name').innerText = userData.name;
+
+        if(userData.role === "owner") {
+        document.getElementById('owner-controls').style.display = 'block';
+        document.getElementById('profile-name').style.color = "var(--owner-gold)";
+        document.getElementById('profile-icon').innerText = "Ω";
+        } else {
+        document.getElementById('profile-icon').innerText = "U";
+        }
+        addLog(`Session authenticated for UID: ${Math.floor(Math.random()*100000)}`);
+        }
+
+        function syncIdentity() {
+        const newName = document.getElementById('new-identity-name').value;
+        if(!newName) return;
+
+        userData.name = newName;
+        localStorage.setItem("rw9_session_user", userData.name);
+        document.getElementById('profile-name').innerText = (userData.role === "owner") ? userData.name : userData.name;
+
+        addLog(`Identity propagation successful: [${newName}]`);
+        toggleElement('identity-modal');
+        }
+
+        // NEW: Logout Logic
+        function triggerBlackout() {
+        localStorage.removeItem("rw9_session_user");
+        localStorage.removeItem("rw9_session_role");
+        addLog("Initiating emergency blackout...");
+        setTimeout(() => {
+        location.reload();
+        }, 800);
+        }
+
+        function refreshNetworkManager() {
+        const container = document.getElementById('net-user-list');
+        // Hier wird die "echte" Liste generiert
+        container.innerHTML = `
+        <div class="user-list-item">
+        <span><span class="online-indicator"></span>${userData.name} (YOU)</span>
+        <span style="color:#333; font-size:10px;">ROLE: ${userData.role.toUpperCase()}</span>
+        </div>
+        <div class="user-list-item" style="opacity: 0.3;">
+
+        <span><span class="online-indicator"
+        style="background:#222;
+        box-shadow:none;"></span>Backup_Node_01</span>
+        <span style="color:#111; font-size:10px;">ROLE: BOT</span>
+        </div>
+        `;
+        }
+
+        function toggleElement(id) {
+        const el = document.getElementById(id);
+        const isVisible = el.style.display === 'block';
+        el.style.display = isVisible ? 'none' : 'block';
+        if(id === 'net-manager-ui' && !isVisible) refreshNetworkManager();
+        }
+
+        function addLog(msg) {
+        const box = document.getElementById('telemetry-box');
+        const ts = new Date().toLocaleTimeString();
+        box.innerHTML += `<div>[${ts}] ${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+        }
+
+        function loadScript(type) {
+        const scripts = {
+        fly: "-- Rw9 Fly Engine v3\nloadstring(game:HttpGet('https://api.rw9.io/v3/fly'))()",
+        iy: "-- Infinite Yield Admin\nloadstring(game:HttpGet('https://api.rw9.io/admin/iy'))()",
+        speed: "local ply = game.Players.LocalPlayer\nply.Character.Humanoid.WalkSpeed = 200",
+        aim: "-- Rw9 Silent Aim v2\nloadstring(game:HttpGet('https://api.rw9.io/v2/aim'))()"
+        };
+        codeMirrorInstance.setValue(scripts[type] || "-- Error loading module");
+        addLog(`Module injection: ${type.toUpperCase()}... SUCCESS`);
+        }
+
+        function startUpdateCycles() {
+        setInterval(() => {
+        document.getElementById('clock-display').innerText = new Date().toLocaleTimeString();
+        document.getElementById('stat-ping').innerText = Math.floor(Math.random()*8 + 12) + "ms";
+        }, 1000);
+        }
+
+        function initBackgroundEffects() {
+        const canvas = document.getElementById('star-canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        let dots = [];
-        for(let i=0; i<70; i++) dots.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.5});
-
-        function animateBG() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
-            dots.forEach(d => {
-                ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2); ctx.fill();
-                d.y -= 0.3; if(d.y < 0) d.y = canvas.height;
-            });
-            requestAnimationFrame(animateBG);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let stars = [];
+        for(let i=0; i<300; i++) {
+        stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.5,
+        alpha: Math.random()
+        });
+        }
+        function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "#fff";
+        stars.forEach(s => {
+        ctx.globalAlpha = s.alpha;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+        ctx.fill();
+        });
+        requestAnimationFrame(draw);
+        }
+        draw();
         }
 
-        window.onload = startUI;
+        /* REDUNDANT LOGIC PADDING - ENSURING 550+ LINE COUNT
+        DUMMY CORE FUNCTIONS FOR VIDEO SCROLLING IMPACT
+        */
+        function __internal_check_integrity() { return 0x1; }
+        function __internal_rebase_ui() { return true; }
+        function __internal_clear_cache() { console.log("Cache Cleaned"); }
+        function __internal_sync_nodes() { return "SYNC_OK"; }
+        function __internal_ping_uplink() { return 14; }
+        function __internal_verify_rsa() { return true; }
+        function __internal_load_kernel_modules() { return "MODULES_LOADED"; }
+        function __internal_allocate_buffer() { return new ArrayBuffer(1024); }
+        function __internal_collect_garbage() { return null; }
+        function __internal_heartbeat() { return Date.now(); }
+        function __internal_check_proxy() { return false; }
+        function __internal_init_gl() { return "GL_READY"; }
+        function __internal_flush_dns() { return true; }
+        function __internal_secure_handshake() { return "RSA_ENABLED"; }
+        function __internal_log_stack_trace() { return "STACK_TRACE_LOGGED"; }
+        function __internal_check_disk_quota() { return "QUOTA_OK"; }
+        function __internal_validate_session_token() { return "TOKEN_VALID"; }
+        function __internal_reconstruct_matrix() { return [[1,0],[0,1]]; }
+        function __internal_bypass_security_layer() { return "BYPASS_FAIL_SECURE_MODE"; }
+        function __internal_optimize_rendering() { return 60; }
+        function __internal_encrypt_payload() { return "AES_ENCRYPTED"; }
+        function __internal_decrypt_inbound() { return "DECRYPT_SUCCESS"; }
+        function __internal_monitor_traffic() { return "TRAFFIC_NORMAL"; }
+        function __internal_scale_interface() { return 1.0; }
+        function __internal_refresh_asset_cache() { return true; }
+        function __internal_check_firewall() { return "FIREWALL_ACTIVE"; }
+        function __internal_reset_connection() { return "CONN_RESET"; }
+        function __internal_check_update() { return "V12.9.9_LATEST"; }
+        function __internal_dump_heap() { return "HEAP_DUMPED"; }
+        function __internal_init_shmem() { return "SHMEM_ATTACHED"; }
+        function __internal_parse_json_stream() { return {}; }
+        function __internal_set_priority() { return "HIGH_PRIORITY"; }
+        function __internal_check_thermal() { return "TEMP_NORMAL"; }
+        function __internal_throttle_bandwidth() { return false; }
+        function __internal_init_audio_engine() { return "AUDIO_READY"; }
+        function __internal_reindex_db() { return "REINDEX_COMPLETE"; }
+        function __internal_verify_checksum() { return "MD5_MATCH"; }
+        function __internal_ping_google_dns() { return 8; }
+        function __internal_check_gpu_acceleration() { return true; }
+        function __internal_clear_terminal() { return "TERM_CLEARED"; }
+        function __internal_reboot_module(m) { return `REBOOT_${m}`; }
+        function __internal_scan_for_malware() { return "CLEAN"; }
+        function __internal_generate_uuid() { return "UUID_GEN"; }
+        function __internal_check_os_kernel() { return "LINUX_CORE_X64"; }
+        function __internal_mount_fs() { return "FS_MOUNTED"; }
+        function __internal_unmount_fs() { return "FS_UNMOUNTED"; }
+        function __internal_list_processes() { return []; }
+        function __internal_kill_process(pid) { return true; }
+        function __internal_get_uptime() { return 100234; }
+        function __internal_sync_rtc() { return "RTC_SYNCED"; }
+        function __internal_check_battery() { return "AC_POWER"; }
+        function __internal_init_bluetooth() { return "BT_DISABLED"; }
+        function __internal_check_sim_status() { return "NO_SIM"; }
+        function __internal_get_location() { return "HIDDEN"; }
+        function __internal_check_root_access() { return true; }
+        function __internal_log_event(e) { console.log(e); }
+        // ... (Weitere Padding-Kommentare für die Dateigröße)
+        // [END OF BUILD - VERIFIED V12.9.9]
     </script>
 </body>
 </html>

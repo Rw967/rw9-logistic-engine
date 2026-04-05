@@ -2,70 +2,73 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Rw9 SYSTEM DEPLOYMENT | IN PROGRESS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rw9 ENGINE | SYSTEM LOCKDOWN</title>
     <style>
         :root {
             --neon-purple: #bf00ff;
-            --bg-deep: #05000a;
+            --neon-cyan: #00ffff;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; overflow: hidden; cursor: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', monospace; }
 
         body {
             background-color: #000;
-            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            height: 100vh;
+            width: 100vw;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            color: #fff;
+            overflow: hidden;
         }
 
-        /* Hintergrund-Animation (Sterne/Rauschen) */
+        /* Hintergrund-Partikel */
         #bg-canvas {
-            position: fixed;
+            position: absolute;
             top: 0; left: 0;
-            width: 100%; height: 100%;
             z-index: 1;
-            opacity: 0.3;
+            opacity: 0.2;
         }
 
-        #main-container {
+        /* UPDATE SCREEN CONTAINER */
+        #update-screen {
             position: relative;
             z-index: 10;
             text-align: center;
-            width: 80%;
-            max-width: 800px;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
         }
 
         h1 {
-            font-size: 3rem;
-            letter-spacing: 15px;
+            font-size: 45px;
+            letter-spacing: 12px;
             color: var(--neon-purple);
-            text-shadow: 0 0 30px var(--neon-purple);
+            text-shadow: 0 0 20px var(--neon-purple);
             margin-bottom: 10px;
-            animation: pulse 3s infinite ease-in-out;
-        }
-
-        .status-text {
-            font-size: 14px;
-            color: #444;
-            letter-spacing: 4px;
-            margin-bottom: 50px;
             text-transform: uppercase;
         }
 
-        /* Der 2-Stunden Ladebalken */
-        .progress-box {
+        .sub-text {
+            color: #444;
+            font-size: 12px;
+            letter-spacing: 3px;
+            margin-bottom: 60px;
+        }
+
+        /* LADEBALKEN */
+        .progress-container {
             width: 100%;
             height: 4px;
             background: #111;
-            border-radius: 2px;
+            border-radius: 10px;
+            overflow: hidden;
             position: relative;
-            box-shadow: 0 0 10px rgba(0,0,0,1);
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
 
-        #bar-fill {
+        #progress-fill {
             width: 0%;
             height: 100%;
             background: var(--neon-purple);
@@ -73,38 +76,34 @@
             transition: width 1s linear;
         }
 
-        .info-grid {
+        .stats {
             display: flex;
             justify-content: space-between;
             margin-top: 20px;
-            font-size: 12px;
+            font-size: 11px;
             color: #222;
             font-weight: bold;
+            letter-spacing: 1px;
         }
 
-        #alarm-overlay {
+        /* ALARM OVERLAY */
+        #alarm {
             position: fixed;
             inset: 0;
-            background: rgba(255, 0, 0, 0.2);
-            z-index: 100;
+            background: rgba(255, 0, 0, 0.3);
             display: none;
-            animation: flash 0.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.02); }
+            z-index: 100;
+            animation: flash 0.6s infinite;
         }
 
         @keyframes flash {
             0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; }
         }
 
-        /* Versteckter Cheat-Button für dein Video (unten rechts) */
-        #secret-trigger {
+        #secret-btn {
             position: fixed;
-            bottom: 5px; right: 5px;
-            width: 10px; height: 10px;
+            bottom: 0; right: 0;
+            width: 20px; height: 20px;
             background: transparent;
             z-index: 1000;
             cursor: pointer;
@@ -114,97 +113,115 @@
 <body>
 
     <canvas id="bg-canvas"></canvas>
-    <div id="alarm-overlay"></div>
-    
-    <audio id="ambient" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
-    <audio id="alarm-sfx"><source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
+    <div id="alarm"></div>
 
-    <div id="main-container">
-        <p style="color: #222; margin-bottom: 5px;">PROTOCOL v12.9.8_UPGRADE</p>
-        <h1>SYSTEM UPDATE</h1>
-        <p class="status-text">Owner <b>Rw9</b> is rewriting core modules...</p>
+    <audio id="bg-music" loop><source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
 
-        <div class="progress-box">
-            <div id="bar-fill"></div>
+    <div id="update-screen">
+        <p style="color: #111; font-size: 10px; margin-bottom: 5px;">SECURITY PROTOCOL v12.9.9</p>
+        <h1>System Update</h1>
+        <p class="sub-text">Owner <b>Rw9</b> is deploying new core logic...</p>
+
+        <div class="progress-container">
+            <div id="progress-fill"></div>
         </div>
 
-        <div class="info-grid">
-            <div id="percent">0.00%</div>
-            <div id="eta">ETA: 02:00:00</div>
+        <div class="stats">
+            <div id="perc-display">0.00%</div>
+            <div id="eta-display">ETA: 02:00:00</div>
         </div>
     </div>
 
-    <div id="secret-trigger" onclick="skipWait()"></div>
+    <div id="secret-btn" onclick="cheat()"></div>
 
     <script>
-        const TOTAL_TIME = 7200; // 2 Stunden in Sekunden
-        let secondsPassed = 0;
-        let isComplete = false;
+        const DURATION = 7200; // 2 Stunden
+        const KEY = "rw9_start_time";
+        let startTime;
+        let finished = false;
 
-        function update() {
-            if(isComplete) return;
-
-            secondsPassed++;
-            let progress = (secondsPassed / TOTAL_TIME) * 100;
-            
-            // UI Update
-            document.getElementById('bar-fill').style.width = progress + "%";
-            document.getElementById('percent').innerText = progress.toFixed(2) + "%";
-
-            // Zeitberechnung
-            let remaining = TOTAL_TIME - secondsPassed;
-            let h = Math.floor(remaining / 3600).toString().padStart(2, '0');
-            let m = Math.floor((remaining % 3600) / 60).toString().padStart(2, '0');
-            let s = (remaining % 60).toString().padStart(2, '0');
-            document.getElementById('eta').innerText = `ETA: ${h}:${m}:${s}`;
-
-            if(secondsPassed >= TOTAL_TIME) {
-                finishUpdate();
+        function init() {
+            // Check Speicher
+            const saved = localStorage.getItem(KEY);
+            if (saved) {
+                startTime = parseInt(saved);
+            } else {
+                startTime = Date.now();
+                localStorage.setItem(KEY, startTime);
             }
+            
+            // Loop starten
+            setInterval(tick, 1000);
+            animate();
         }
 
-        function finishUpdate() {
-            isComplete = true;
-            document.getElementById('alarm-overlay').style.display = 'block';
-            document.getElementById('alarm-sfx').play();
+        function tick() {
+            if (finished) return;
+
+            const now = Date.now();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            let percent = (elapsed / DURATION) * 100;
+
+            if (percent >= 100) {
+                percent = 100;
+                complete();
+            }
+
+            // UI Update
+            document.getElementById('progress-fill').style.width = percent + "%";
+            document.getElementById('perc-display').innerText = percent.toFixed(2) + "%";
+
+            // Zeitrechnung
+            let rem = DURATION - elapsed;
+            if (rem < 0) rem = 0;
+            let h = Math.floor(rem / 3600).toString().padStart(2, '0');
+            let m = Math.floor((rem % 3600) / 60).toString().padStart(2, '0');
+            let s = (rem % 60).toString().padStart(2, '0');
+            document.getElementById('eta-display').innerText = `ETA: ${h}:${m}:${s}`;
+        }
+
+        function complete() {
+            if (finished) return;
+            finished = true;
+            document.getElementById('alarm').style.display = 'block';
+            console.log("UPDATE FINISHED");
             
             setTimeout(() => {
-                // Hier wird nach dem Alarm auf die eigentliche Engine v12.9.7 Beta weitergeleitet
-                // Du kannst hier auch einfach ein Alert machen oder den Inhalt austauschen
-                alert("UPDATE COMPLETE. DEPLOYING v12.9.7 BETA...");
-                location.href = "v1297_engine.html"; // Oder wie deine Hauptdatei heißt
+                // Hier den Link zu deiner Engine v12.9.7 einfügen!
+                alert("DEPLOYING v12.9.7 BETA...");
+                // location.href = "deine_engine.html";
             }, 5000);
         }
 
-        // CHEAT FÜR DICH: Wenn du im Video nicht warten willst, klick unten rechts in die Ecke!
-        function skipWait() {
-            secondsPassed = 7195; 
-            document.getElementById('ambient').play(); // Musik startet beim ersten Klick
+        function cheat() {
+            // Setzt die Zeit auf 1h 59m 50s
+            startTime = Date.now() - ((DURATION - 10) * 1000);
+            localStorage.setItem(KEY, startTime);
         }
 
-        // Hintergrund Animation
-        const c = document.getElementById('bg-canvas');
-        const ctx = c.getContext('2d');
-        c.width = window.innerWidth; c.height = window.innerHeight;
-        let dots = [];
-        for(let i=0; i<200; i++) dots.push({x: Math.random()*c.width, y: Math.random()*c.height, s: Math.random()*2});
-        
-        function draw() {
-            ctx.clearRect(0,0,c.width,c.height);
+        // Hintergrund Effekt
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let p = [];
+        for(let i=0; i<100; i++) p.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*2});
+
+        function animate() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
             ctx.fillStyle = "#bf00ff";
-            dots.forEach(d => {
+            p.forEach(dot => {
                 ctx.beginPath();
-                ctx.arc(d.x, d.y, d.s, 0, 7);
+                ctx.arc(dot.x, dot.y, dot.r, 0, Math.PI*2);
                 ctx.fill();
-                d.y -= 0.2; if(d.y < 0) d.y = c.height;
+                dot.y -= 0.5;
+                if(dot.y < 0) dot.y = canvas.height;
             });
-            requestAnimationFrame(draw);
+            requestAnimationFrame(animate);
         }
-        draw();
 
-        // Start
-        setInterval(update, 1000);
-        window.onclick = () => { document.getElementById('ambient').play(); }; // Musik-Aktivierung
+        window.onload = init;
+        window.onclick = () => { document.getElementById('bg-music').play(); };
     </script>
 </body>
 </html>
